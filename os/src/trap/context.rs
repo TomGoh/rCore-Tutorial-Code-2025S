@@ -15,10 +15,20 @@ impl TrapContext {
     pub fn set_sp(&mut self, sp: usize) {
         self.x[2] = sp;
     }
-    /// init app context
+    
+    /// Init app context with entry point and stack pointer,
+    /// should be called before run an app, init an appropriate TrapContext for it
+    ///
+    /// The context setups include:
+    /// 1. Set the entry point of the application to `sepc` field of TrapContext
+    /// 2. Set the stack pointer of the application to `x[2]` (sp) field of TrapContext
+    /// 3. Set the `sstatus` field by copying current kernel sstatus and setting
+    ///    SPP (Supervisor Previous Privilege) to User mode, so that when `sret`
+    ///    executes, the CPU will switch to user mode
     pub fn app_init_context(entry: usize, sp: usize) -> Self {
         let mut sstatus = sstatus::read(); // CSR sstatus
-        sstatus.set_spp(SPP::User); //previous privilege mode: user mode
+        // Switch the previous privilege mode from Supervisor to User
+        sstatus.set_spp(SPP::User);
         let mut cx = Self {
             x: [0; 32],
             sstatus,

@@ -10,13 +10,18 @@
     .globl __restore
     .align 2
 __alltraps:
+    # `csrrw rd, csr, rs` exchanges values in csr and rs, and writes the old csr value to rd
+    # here we exchange sp and sscratch, so that we can use sp to point to kernel stack
+    # and sscratch to point to user stack
+    # before this instruction, sp->user stack, sscratch->kernel stack
+    # after this instruction, sp->kernel stack, sscratch->user stack
     csrrw sp, sscratch, sp
     # now sp->kernel stack, sscratch->user stack
-    # allocate a TrapContext on kernel stack
+    # allocate a space for TrapContext, which is to be saved, on kernel stack
     addi sp, sp, -34*8
     # save general-purpose registers
     sd x1, 1*8(sp)
-    # skip sp(x2), we will save it later
+    # skip sp(x2), we will save it later since it points to the kernel stack now
     sd x3, 3*8(sp)
     # skip tp(x4), application does not use it
     # save x5~x31
